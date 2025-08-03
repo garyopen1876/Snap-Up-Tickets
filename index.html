@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>搶票系統</title>
+  <style>
+    body {
+      font-family: "Arial", sans-serif;
+      background: #f6f9fc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 1.1em;
+      color: #444;
+    }
+
+    #stopBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: none; /* 預設隱藏 */
+    }
+
+    #stopBtn:hover {
+      background-color: #c0392b;
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #333;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      z-index: 9999;
+      opacity: 0;
+      animation: fadeInOut 3s ease forwards;
+      font-size: 14px;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(-20px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+  </style>
+</head>
+<body>
+  <h1>搶票系統</h1>
+  <div id="status">等待 9:00 搶票</div>
+  <button id="stopBtn" onclick="stopSnatching()">停止搶票</button>
+
+  <script>
+    const API_URL = "__API_URL__";
+  
+    const status = document.getElementById("status");
+    const stopBtn = document.getElementById("stopBtn");
+    const targetHour = 9;
+    let intervalId = null;
+    let waitTimer = null;
+
+    function showToast(message) {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function callAPI() {
+      fetch(API_URL)
+        .then(res => {
+          const time = new Date().toLocaleTimeString();
+          if (res.ok) {
+            showToast("成功搶票！時間：" + time);
+          } else {
+            showToast("失敗：" + res.status + " 時間：" + time);
+          }
+        })
+        .catch(err => {
+          showToast("錯誤：" + err.message);
+        });
+    }
+
+    function checkTimeAndStart() {
+      const now = new Date();
+      if (now.getHours() === targetHour && now.getMinutes() === 0 && now.getSeconds() === 0) {
+        clearInterval(waitTimer);
+        status.innerText = "9:00 開始搶票";
+        stopBtn.style.display = "inline-block";
+        intervalId = setInterval(callAPI, 500);
+      }
+    }
+
+    function stopSnatching() {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+        status.innerText = "已停止搶票";
+        stopBtn.style.display = "none";
+        showToast("搶票已停止");
+      }
+    }
+
+    waitTimer = setInterval(checkTimeAndStart, 1000);
+  </script>
+</body>
+</html>
